@@ -12,7 +12,10 @@ import (
 	"os"
 )
 
-func makeHugeFile(fn string, data []byte, gigas int) {
+var gigas int
+var fast bool
+
+func makeHugeFile(fn string) {
 	println("Making file", fn, "with", gigas, "GB")
 
 	file, err := os.OpenFile(fn, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0444)
@@ -22,20 +25,23 @@ func makeHugeFile(fn string, data []byte, gigas int) {
 	}
 	defer file.Close()
 
+	data := make([]byte, 1024*1024)
+	rand.Read(data)
+
 	for i := 0; i < gigas*1024; i++ {
 		file.Write(data)
+		if !fast {
+			rand.Read(data)
+		}
 	}
 }
 
 func main() {
-	data := make([]byte, 1024*1024)
-	rand.Read(data)
-
-	var gigas int
 	flag.IntVar(&gigas, "g", 1, "GB to write on each file")
+	flag.BoolVar(&fast, "f", false, "Fast mode: generates 1MB of random data and repeat")
 	flag.Parse()
 
 	for _, file := range flag.Args() {
-		makeHugeFile(file, data, gigas)
+		makeHugeFile(file)
 	}
 }
